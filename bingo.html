@@ -22,67 +22,175 @@
     }
 </style>
 </head>
+
 <body>
 
 <h2>Bingo Card Generator</h2>
-
 <label>Card Size:</label>
 <input type="number" id="size" min="1" value="5" style="width:60px" />
 <br><br>
 
 <label>Entries (one per line):</label><br>
 <textarea id="entries" rows="7" style="width:100%">
-Free
-Coffee
-Bug found
-Refactor
-Ship to production
-Meeting cancelled
-Weekend deploy
-Rubber ducking
-Dark mode enabled
+Add a [simple]
+Use [weird block]
+Use [functional block]
+Add some kind of [idea]
+Add [X] upside-down stairs
+Add [X] open fence gates
+Use one of every [wood]-type block
+Use [Y] unique redstone components
+Use [color] glazed terracotta
+Use [wood] shelf
+Use [stone]
+Build must be [theme]
 </textarea>
 <br><br>
 
 <button id="generate">Generate</button>
-
 <div id="grid"></div>
 
 <script>
-const sizeInput = document.getElementById("size");
-const entriesInput = document.getElementById("entries");
-const grid = document.getElementById("grid");
+    const data = {
+        ["stone"]: [
+            "stone",
+            "cobblestone",
+            "blackstone",
+            "deepslate",
+            "granite",
+            "diorite",
+            "andesite",
+        ],
+        ["wood"]: [
+            "oak",
+            "birch",
+            "spruce",
+            "jungle",
+            "acacia",
+            "dark oak",
+            "cherry",
+            "crimson",
+            "warped",
+            "bamboo",
+            "pale oak",
+            "mangrove",
+        ],
+        ["theme"]: [
+            "cyberpunk",
+            "medieval",
+            "fantasy",
+            "post-apocalyptic",
+            "organic",
+            "creepy",
+            "tall",
+            "wide",
+            "ruined",
+            "industrial",
+            "oriental",
+            "cold",
+            "hot",
+        ],
+        ["color"]: [
+            "white",
+            "light gray",
+            "gray",
+            "black",
+            "brown",
+            "red",
+            "orange",
+            "yellow",
+            "lime",
+            "green",
+            "cyan",
+            "light blue",
+            "blue",
+            "purple",
+            "magenta",
+            "pink",
+        ],
+        ["weird block"]: [
+            "amethyst block",
+            "wet sponge",
+            "enchanting table",
+            "bell",
+            "vault",
+            "display entity",
+        ],
+        ["functional block"]: [
+            "fletching table",
+            "composter",
+            "jukebox",
+            "smoker",
+            "furnace",
+            "blast furnace",
+            "cartography table",
+            "stonecutter",
+            "grindstone",
+            "crafting table",
+            "smithing table",
+            "anvil",
+        ],
+        ["idea"]: [
+            "bridge",
+            "tower",
+            "garden",
+            "gate",
+            "machine",
+            "circle",
+            "square",
+            "triangle",
+        ],
+    };
 
-document.getElementById("generate").addEventListener("click", () => {
-    const size = parseInt(sizeInput.value) || 5;
-    let entries = entriesInput.value.split("\n").map(x => x.trim()).filter(Boolean);
+    const sizeInput = document.getElementById("size");
+    const entriesInput = document.getElementById("entries");
+    const grid = document.getElementById("grid");
 
-    // Adjust entries list to match size^2
-    const needed = size * size;
-    if (entries.length < needed) {
-        // Repeat entries if too few
-        const repeat = [...entries];
-        while (entries.length < needed) entries.push(...repeat);
-        entries = entries.slice(0, needed);
-    } else if (entries.length > needed) {
-        entries = entries.slice(0, needed);
+    document.getElementById("generate").addEventListener("click", () => {
+        const size = parseInt(sizeInput.value) || 3;
+        let entries = shuffle(
+            entriesInput.value
+                .split("\n")
+                .map(x => x.trim())
+                .filter(Boolean)
+        );
+
+        // Adjust entries list to match size^2
+        const needed = size * size;
+        if (entries.length < needed) {
+            // Repeat entries if too few
+            while (entries.length < needed) {
+                entries.push(randomItem(entries));
+            }
+        } else if (entries.length > needed) {
+            entries = entries.slice(0, needed);
+        }
+
+        // Click entry to gray it out
+        grid.innerHTML = "";
+        grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+        entries.forEach(text => {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.textContent = text;
+            cell.addEventListener("click", () => {
+                cell.classList.toggle("done");
+            });
+            grid.appendChild(cell);
+        });
+    });
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     }
 
-    grid.innerHTML = "";
-    grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-
-    entries.forEach(text => {
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        cell.textContent = text;
-
-        cell.addEventListener("click", () => {
-            cell.classList.toggle("done");
-        });
-
-        grid.appendChild(cell);
-    });
-});
+    function randomItem(array) {
+        return array[Math.floor(Math.random() * array.length)];
+    }
 </script>
 
 </body>
