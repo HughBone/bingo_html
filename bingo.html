@@ -111,6 +111,12 @@ add a [simple] made out of [stone]
 
     let random = Math.random; // Default to Math.random
 
+    const numberCategories = {
+        "X": { min: 1, max: 50 },
+        "Y": { min: 1, max: 8 },
+        "Z": { min: 1, max: 4 },
+    };
+
     function getData() {
         return {
             ["stone"]: [
@@ -229,13 +235,17 @@ add a [simple] made out of [stone]
     const grid = document.getElementById("grid");
 
     let noEntryRepeats = new Set(); // Set<string>
-    
+    // Set<string>
+    //  noEntryRepeats can be reset but this cannot. Used to prevent numberCategories repeats.
+    let constantRepeats = new Set();
+
     function generateRandomSeed() {
         return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     }
-    
+
     function generateCard(seedValue) {
         noEntryRepeats = new Set();
+        constantRepeats = new Set();
         data = getData();
 
         seedDisplay.textContent = `Current seed: ${seedValue}`;
@@ -260,11 +270,20 @@ add a [simple] made out of [stone]
             // Repeat entries if too few
             const originalEntries = [...entries];
 
+            // Prevent constant repeats
+            originalEntries.forEach(ogEntry => {
+                if (Object.keys(numberCategories).some(
+                    (numCat) => ogEntry.includes(`[${numCat}]`))
+                ) {
+                    constantRepeats.add(ogEntry);
+                }
+            });
+
             while (entries.length < totalCells) {
                 let cantFindAny = true;
                 for (let i=0; i<originalEntries.length * 2; i++) {
                     newEntry = randomItem(originalEntries);
-                    if (noEntryRepeats.has(newEntry)) {
+                    if (noEntryRepeats.has(newEntry) || constantRepeats.has(newEntry)) {
                         continue;
                     }
                     noEntryRepeats.add(newEntry);
@@ -348,12 +367,9 @@ add a [simple] made out of [stone]
 
     function replaceStringWithToken(str) {
         const newStr = str.replace(/\[(.+?)\]/g, (_, token) => {
-            if (token === "X") {
-                return randomBetween(1, 50);
-            } else if (token === "Y") {
-                return randomBetween(1, 8);
-            } else if (token === "Z") {
-                return randomBetween(1, 4);
+            if (numberCategories[token]) {
+                const { min, max } = numberCategories[token];
+                return randomBetween(min, max);
             }
 
             let tokenList = data[token];
