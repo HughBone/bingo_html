@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <title>Bingo Generator</title>
 <style>
-    body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; background: lime; }
+    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; background: lime; }
     #grid { display: grid; gap: 5px; margin-top: 15px; }
     .cell {
         border: 1px solid #333;
@@ -25,15 +25,33 @@
         color: #444;
         text-decoration: line-through;
     }
+    .size-inputs {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+    .size-input-group {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
 </style>
 </head>
 
 <body>
 
 <h2>Bingo Card Generator</h2>
-<label>Card Size:</label>
-<input type="number" id="size" min="1" value="3" style="width:60px" />
-<br><br>
+<div class="size-inputs">
+    <div class="size-input-group">
+        <label>Width:</label>
+        <input type="number" id="width" min="1" value="5" style="width:60px" />
+    </div>
+    <div class="size-input-group">
+        <label>Height:</label>
+        <input type="number" id="height" min="1" value="5" style="width:60px" />
+    </div>
+</div>
+<br>
 
 <label>Seed:</label>
 <input type="text" id="seed" style="width:200px" placeholder="Seed will be generated" />
@@ -203,7 +221,8 @@ add a [simple] made out of [stone]
     }
 
     let data = getData();
-    const sizeInput = document.getElementById("size");
+    const widthInput = document.getElementById("width");
+    const heightInput = document.getElementById("height");
     const seedInput = document.getElementById("seed");
     const seedDisplay = document.getElementById("seedDisplay");
     const entriesInput = document.getElementById("entries");
@@ -225,7 +244,10 @@ add a [simple] made out of [stone]
         const numericSeed = hashString(seedValue);
         random = seededRandom(numericSeed);
 
-        const size = parseInt(sizeInput.value) || 3;
+        const width = parseInt(widthInput.value) || 5;
+        const height = parseInt(heightInput.value) || 5;
+        const totalCells = width * height;
+        
         let entries = shuffle(
             entriesInput.value
                 .split("\n")
@@ -233,37 +255,39 @@ add a [simple] made out of [stone]
                 .filter(Boolean)
         );
 
-        // Adjust entries list to match size^2
-        const needed = size * size;
-        if (entries.length < needed) {
+        // Adjust entries list to match width * height
+        if (entries.length < totalCells) {
             // Repeat entries if too few
-            while (entries.length < needed) {
-                entries.push(randomItem(entries));
-            }
-        } else if (entries.length > needed) {
-            entries = entries.slice(0, needed);
-        }
+            const originalEntries = [...entries];
 
-        entries = entries.map((entry) => {
-            let newEntry = entry;
-            while (true) {
-                for (let i=0; i<entries.length * 2; i++) {
-                    if (noEntryRepeats.has(entry)) {
-                        newEntry = randomItem(entries);
+            while (entries.length < totalCells) {
+                let cantFindAny = true;
+                for (let i=0; i<originalEntries.length * 2; i++) {
+                    newEntry = randomItem(originalEntries);
+                    if (noEntryRepeats.has(newEntry)) {
                         continue;
                     }
-
-                    noEntryRepeats.add(entry);
-                    return replaceStringWithToken(newEntry);
+                    noEntryRepeats.add(newEntry);
+                    entries.push(newEntry);
+                    cantFindAny = false;
+                    break;
                 }
-                // Reset repeats as a last resort
-                noEntryRepeats = new Set();
+
+                if (cantFindAny) {
+                    noEntryRepeats = new Set();
+                }
             }
-        });
+        }
+        
+        if (entries.length > totalCells) {
+            entries = entries.slice(0, totalCells);
+        }
+
+        entries = entries.map((entry) => replaceStringWithToken(entry));
 
         // Click entry to gray it out
         grid.innerHTML = "";
-        grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+        grid.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
         entries.forEach(text => {
             const cell = document.createElement("div");
             cell.className = "cell";
